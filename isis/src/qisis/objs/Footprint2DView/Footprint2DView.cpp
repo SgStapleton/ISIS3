@@ -130,6 +130,7 @@ namespace Isis {
 
     m_toolPad = new ToolPad("Tool Pad", 0);
     m_toolPad->setObjectName("toolPad");
+    addToolBar(m_toolPad);
 
 
     m_sceneWidget->addToPermanent(m_permToolBar);
@@ -141,10 +142,10 @@ namespace Isis {
 
     setAcceptDrops(true);
 
-    // QSizePolicy policy = sizePolicy();
-    // policy.setHorizontalPolicy(QSizePolicy::Expanding);
-    // policy.setVerticalPolicy(QSizePolicy::Expanding);
-    // setSizePolicy(policy);
+    QSizePolicy policy = sizePolicy();
+    policy.setHorizontalPolicy(QSizePolicy::Expanding);
+    policy.setVerticalPolicy(QSizePolicy::Expanding);
+    setSizePolicy(policy);
   }
 
 
