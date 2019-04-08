@@ -136,7 +136,7 @@ namespace Isis {
 
       // Implementations for parent's pure virtual members
       bool Xform(double &inSample, double &inLine,
-                 const double outSample, const double outLine);
+                 const double outSample, const double outLine, int index);
 
       /**
        * @brief Determine the number of samples in the output image
@@ -305,5 +305,3 @@ namespace Isis {
 
 }
 #endif
-
-

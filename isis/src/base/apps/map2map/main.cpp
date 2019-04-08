@@ -409,7 +409,7 @@ map2map::map2map(const int inputSamples, const int inputLines, TProjection *inma
 
 // Transform method mapping output line/samps to lat/lons to input line/samps
 bool map2map::Xform(double &inSample, double &inLine,
-                    const double outSample, const double outLine) {
+                    const double outSample, const double outLine, int index) {
   // See if the output image coordinate converts to lat/lon
   if(!p_outmap->SetWorld(outSample, outLine)) return false;
 

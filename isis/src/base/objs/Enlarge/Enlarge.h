@@ -60,7 +60,7 @@ namespace Isis {
       // Implementations for parent's pure virtual members
       // Convert the requested output samp/line to an input samp/line
       bool Xform(double &inSample, double &inLine,
-                 const double outSample, const double outLine);
+                 const double outSample, const double outLine, int index);
       
       // Create label for the enlarged output image
       PvlGroup  UpdateOutputLabel(Cube *pOutCube);
@@ -95,4 +95,3 @@ namespace Isis {
 };
 
 #endif
-

@@ -119,7 +119,7 @@ namespace Isis {
    * @return bool  Always returns true as the value will always be provided
    */
   bool SlitherTransform::Xform(double &inSample, double &inLine,
-                               const double outSample, const double outLine) {
+                               const double outSample, const double outLine, int index) {
     inLine   = getLineXform(outLine);
     inSample = getSampXform(outLine, outSample);
     return (true);
@@ -285,7 +285,7 @@ namespace Isis {
       double outLine(line), inLine, inSamp;
       double sampOffset, lineOffset;
 
-      Xform(inSamp, inLine, outSamp, outLine);
+      Xform(inSamp, inLine, outSamp, outLine, 0);
       sampOffset = getOffset(outLine, _sampSpline);
       lineOffset = getOffset(outLine, _lineSpline);
 

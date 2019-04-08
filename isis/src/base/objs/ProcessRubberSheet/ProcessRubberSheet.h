@@ -112,7 +112,13 @@ namespace Isis {
    *                                            child classes.  Made destructor virtual.
    *                                            References #2215.
    *   @history 2017-06-09 Christopher Combs - Changed loop counter int in
-                               StartProcess to long long int. References #4611.
+   *                           StartProcess to long long int. References #4611.
+   *   @history 2019-03-20 Summer Stapleton-Greig - Modified transformPatch to 
+   *                           make use of a larger buffer to write all pixels
+   *                           at once after the buffer is filled rather than
+   *                           writing one pixel at a time. This reduces the
+   *                           number of writes, significantly increasing
+   *                           processing speed of cam2map.
    *
    *   @todo 2005-02-11 Stuart Sides - finish documentation and add coded and
    *                        implementation example to class documentation
@@ -200,13 +206,13 @@ namespace Isis {
 
       void transformPatch (double startingSample, double endingSample,
                            double startingLine, double endingLine,
-                           Brick &obrick, Portal &iportal,
-                           Transform &trans, Interpolator &interp);
+                           Portal &iportal, Transform &trans,
+                           Interpolator &interp);
 
       void splitPatch (double startingSample, double endingSample,
                        double startingLine, double endingLine,
-                       Brick &obrick, Portal &iportal,
-                       Transform &trans, Interpolator &interp);
+                       Portal &iportal, Transform &trans,
+                       Interpolator &interp);
 #if 0
       void transformPatch (double startingSample, double endingSample,
                            double startingLine, double endingLine);

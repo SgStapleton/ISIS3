@@ -445,7 +445,7 @@ ringscam2mapForward::ringscam2mapForward(const int inputSamples,
 
 // Transform method mapping input line/samps to radii/lons to output line/samps
 bool ringscam2mapForward::Xform(double &outSample, double &outLine,
-                    const double inSample, const double inLine) {
+                    const double inSample, const double inLine, int index) {
 
   // See if the input image coordinate converts to a radius/lon
   if (!p_incam->SetImage(inSample,inLine)) return false;
@@ -509,7 +509,7 @@ ringscam2mapReverse::ringscam2mapReverse(const int inputSamples,
 
 // Transform method mapping output line/samps to rads/azs to input line/samps
 bool ringscam2mapReverse::Xform(double &inSample, double &inLine,
-                           const double outSample, const double outLine) {
+                           const double outSample, const double outLine, int index) {
   // See if the output image coordinate converts to lat/lon
   if(!p_outmap->SetWorld(outSample, outLine)) return false;
 
@@ -689,4 +689,3 @@ void LoadCameraRange() {
   ui.Clear("DEFAULTRANGE");
   ui.PutAsString("DEFAULTRANGE", "CAMERA");
 }
-

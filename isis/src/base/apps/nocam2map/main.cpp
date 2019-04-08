@@ -520,7 +520,7 @@ nocam2map::nocam2map(LeastSquares sample, LeastSquares line, TProjection *outmap
 
 // Transform method mapping output line/samps to lat/lons to input line/samps
 bool nocam2map::Xform(double &inSample, double &inLine,
-                      const double outSample, const double outLine) {
+                      const double outSample, const double outLine, int index) {
   if (!p_outmap->SetWorld(outSample, outLine)) return false;
 
   if (outSample > p_outputSamples) return false;

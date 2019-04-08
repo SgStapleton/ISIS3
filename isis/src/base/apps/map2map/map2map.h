@@ -32,7 +32,7 @@ class map2map : public Isis::Transform {
 
     // Implementations for parent's pure virtual members
     bool Xform(double &inSample, double &inLine,
-               const double outSample, const double outLine);
+               const double outSample, const double outLine, int index);
     int OutputSamples() const;
     int OutputLines() const;
 };

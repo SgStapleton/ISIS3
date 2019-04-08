@@ -87,7 +87,7 @@ class Rotate : public Isis::Transform {
     // Implementations for parent's pure virtual members
     // Convert the requested output samp/line to an input samp/line
     bool Xform(double &inSample, double &inLine,
-               const double outSample, const double outLine) {
+               const double outSample, const double outLine, int index) {
       // First calculate the rotated input position (uses equation of a line)
       double inRotSamp = outSample - 0.5 + p_minSamp;
       double inRotLine = outLine - 0.5 + p_minLine;
@@ -112,4 +112,3 @@ class Rotate : public Isis::Transform {
 };
 
 #endif
-

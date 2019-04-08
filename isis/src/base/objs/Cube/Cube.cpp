@@ -1163,9 +1163,9 @@ namespace Isis {
    * @returns A camera based on the open cube
    */
   Camera *Cube::camera() {
-    if (m_camera == NULL && isOpen()) {
+    // if (m_camera == NULL && isOpen()) {
       m_camera = CameraFactory::Create(*this);
-    }
+    // }
     return m_camera;
   }
 

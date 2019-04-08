@@ -68,7 +68,7 @@ namespace Isis {
    * @return bool
    */
   bool Enlarge::Xform(double &inSample, double &inLine,
-                      const double outSample, const double outLine) {
+                      const double outSample, const double outLine, int index) {
     inSample = (outSample - 0.5) / mdSampleScale + 0.5 + (mdStartSample - 1);
     inLine   = (outLine - 0.5) / mdLineScale + 0.5 + (mdStartLine - 1);
 
@@ -152,5 +152,3 @@ namespace Isis {
     return resultsGrp;
   }
 }
-
-

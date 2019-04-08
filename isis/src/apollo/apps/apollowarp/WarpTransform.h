@@ -25,7 +25,7 @@ class WarpTransform : public Transform {
   
       // Implementations for parent's pure virtual members
       bool Xform (double &inSample, double &inLine,
-                      const double outSample, const double outLine);
+                      const double outSample, const double outLine, int index);
       int OutputSamples () const { return p_outputSamples; };
       int OutputLines () const { return p_outputLines; };
       Isis::PvlGroup Residuals();
@@ -43,5 +43,3 @@ class WarpTransform : public Transform {
 
 }
 #endif
-
-

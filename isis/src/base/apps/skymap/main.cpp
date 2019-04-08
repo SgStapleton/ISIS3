@@ -55,7 +55,7 @@ class sky2map : public Transform {
 
     // Implementations for parent's pure virtual members
     bool Xform(double &inSample, double &inLine,
-               const double outSample, const double outLine);
+               const double outSample, const double outLine, int index);
     int OutputSamples() const;
     int OutputLines() const;
 };
@@ -223,7 +223,7 @@ sky2map::sky2map(const int inputSamples, const int inputLines,
 
 // Transform method mapping output line/samps to lat/lons to input line/samps
 bool sky2map::Xform(double &inSample, double &inLine,
-                    const double outSample, const double outLine) {
+                    const double outSample, const double outLine, int index) {
   // See if the output image coordinate converts to lat/lon
   if(!p_outmap->SetWorld(outSample, outLine)) return false;
 
@@ -380,8 +380,3 @@ void LoadCameraRange() {
   ui.Clear("DEFAULTRANGE");
   ui.PutAsString("DEFAULTRANGE", "CAMERA");
 }
-
-
-
-
-

@@ -1,6 +1,8 @@
 #ifndef cam2map_h
 #define cam2map_h
 
+#include <QList>
+
 #include "TProjection.h"
 #include "Transform.h"
 
@@ -15,7 +17,7 @@ using namespace Isis;
  */
 class cam2mapReverse : public Transform {
   private:
-    Camera *p_incam;
+    QList<Camera*> p_incams;
     TProjection *p_outmap;
     int p_inputSamples;
     int p_inputLines;
@@ -36,7 +38,8 @@ class cam2mapReverse : public Transform {
 
     // Implementations for parent's pure virtual members
     bool Xform(double &inSample, double &inLine,
-               const double outSample, const double outLine);
+               const double outSample, const double outLine,
+               int index);
     int OutputSamples() const;
     int OutputLines() const;
 };
@@ -48,8 +51,8 @@ class cam2mapReverse : public Transform {
  */
 class cam2mapForward : public Transform {
   private:
-    Camera *p_incam;
-    TProjection *p_outmap;
+    QList<Camera*> p_incams;
+    QList<TProjection*> p_outmaps;
     int p_inputSamples;
     int p_inputLines;
     bool p_trim;
@@ -59,9 +62,9 @@ class cam2mapForward : public Transform {
   public:
     // constructor
     cam2mapForward(const int inputSamples, const int inputLines, 
-                   Camera *incam,
+                   Cube *icube,
                    const int outputSamples, const int outputLines, 
-                   TProjection *outmap,
+                   QList<TProjection*> outmaps,
                    bool trim);
 
     // destructor
@@ -69,7 +72,8 @@ class cam2mapForward : public Transform {
 
     // Implementations for parent's pure virtual members
     bool Xform(double &outSample, double &outLine,
-               const double inSample, const double inLine);
+               const double inSample, const double inLine,
+               int threadIndex);
     int OutputSamples() const;
     int OutputLines() const;
 };

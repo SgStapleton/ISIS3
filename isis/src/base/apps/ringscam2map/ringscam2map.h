@@ -36,7 +36,7 @@ class ringscam2mapReverse : public Transform {
 
     // Implementations for parent's pure virtual members
     bool Xform(double &inSample, double &inLine,
-               const double outSample, const double outLine);
+               const double outSample, const double outLine, int index);
     int OutputSamples() const;
     int OutputLines() const;
 };
@@ -72,7 +72,7 @@ class ringscam2mapForward : public Transform {
 
     // Implementations for parent's pure virtual members
     bool Xform(double &outSample, double &outLine,
-               const double inSample, const double inLine);
+               const double inSample, const double inLine, int index);
     int OutputSamples() const;
     int OutputLines() const;
 };

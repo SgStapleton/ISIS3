@@ -108,7 +108,7 @@ namespace Isis {
 
   // Convert the requested output samp/line to an input samp/line
   bool WarpTransform::Xform(double &inSample, double &inLine,
-                            const double outSample, const double outLine) {
+                            const double outSample, const double outLine, int index) {
     if (p_weighted) {
       for (int i = 0; i < (int) p_outputLine.size(); i++) {
         double dist = (outLine - p_outputLine[i]) *

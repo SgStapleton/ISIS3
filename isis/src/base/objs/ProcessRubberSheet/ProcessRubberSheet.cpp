@@ -23,7 +23,11 @@
 #include <iostream>
 #include <iomanip>
 
+#include <QtConcurrent>
+#include <QFuture>
 #include <QVector>
+#include <SpiceZfc.h>
+#include <SpiceZpr.h>
 
 #include "Affine.h"
 #include "BasisFunction.h"
@@ -261,7 +265,7 @@ namespace Isis {
       outputLine = otile.Line(i);
       // Use the defined transform to find out what input pixel the output
       // pixel came from
-      if (trans.Xform(inputSamp, inputLine, outputSamp, outputLine)) {
+      if (trans.Xform(inputSamp, inputLine, outputSamp, outputLine, 0)) {
         if ((inputSamp < 0.5) || (inputLine < 0.5) ||
             (inputLine > InputCubes[0]->lineCount() + 0.5) ||
             (inputSamp > InputCubes[0]->sampleCount() + 0.5)) {
@@ -349,7 +353,7 @@ namespace Isis {
         double sjunk = 0.0;
         double ljunk = 0.0;
 
-        if (trans.Xform(sjunk, ljunk, sample, line)) {
+        if (trans.Xform(sjunk, ljunk, sample, line, 0)) {
           return true;
         }
       }
@@ -373,28 +377,28 @@ namespace Isis {
     int badCorner = 0;
     oline[0] = quad->sline;
     osamp[0] = quad->ssamp;
-    if (!trans.Xform(isamp[0], iline[0], osamp[0], oline[0])) {
+    if (!trans.Xform(isamp[0], iline[0], osamp[0], oline[0], 0)) {
       badCorner++;
     }
 
     // Now try the upper right corner
     oline[1] = quad->sline;
     osamp[1] = quad->esamp;
-    if (!trans.Xform(isamp[1], iline[1], osamp[1], oline[1])) {
+    if (!trans.Xform(isamp[1], iline[1], osamp[1], oline[1], 0)) {
       badCorner++;
     }
 
     // Now try the lower left corner
     oline[2] = quad->eline;
     osamp[2] = quad->ssamp;
-    if (!trans.Xform(isamp[2], iline[2], osamp[2], oline[2])) {
+    if (!trans.Xform(isamp[2], iline[2], osamp[2], oline[2], 0)) {
       badCorner++;
     }
 
     // Now try the lower right corner
     oline[3] = quad->eline;
     osamp[3] = quad->esamp;
-    if (!trans.Xform(isamp[3], iline[3], osamp[3], oline[3])) {
+    if (!trans.Xform(isamp[3], iline[3], osamp[3], oline[3], 0)) {
       badCorner++;
     }
 
@@ -552,7 +556,7 @@ namespace Isis {
     double quadMidSamp = (quad->ssamp + quad->esamp) / 2.0;
     double midLine, midSamp;
 
-    if (!trans.Xform(midSamp, midLine, quadMidSamp, quadMidLine)) {
+    if (!trans.Xform(midSamp, midLine, quadMidSamp, quadMidLine, 0)) {
       if ((quad->eline - quad->sline) < p_endQuadSize) {
         SlowQuad(quadTree, trans, lineMap, sampMap);
       }
@@ -693,7 +697,7 @@ namespace Isis {
       for (int osamp = quad->ssamp; osamp <= quad->esamp; osamp++) {
         int sampIndex = osamp - quad->ssampTile;
         lineMap[lineIndex][sampIndex] = NULL8;
-        if (trans.Xform(isamp, iline, (double) osamp, (double) oline)) {
+        if (trans.Xform(isamp, iline, (double) osamp, (double) oline, 0)) {
           if ((isamp >= 0.5) ||
               (iline >= 0.5) ||
               (iline <= InputCubes[0]->lineCount() + 0.5) ||
@@ -816,9 +820,6 @@ namespace Isis {
                    InputCubes[0]->pixelType() ,
                    interp.HotSample(), interp.HotLine());
 
-    // Create a buffer for writing to the output file
-    Brick obrick(*OutputCubes[0],1,1,1);
-
     // Setup the progress meter
     int patchesPerBand = 0;
     for (int line = m_patchStartLine; line <= InputCubes[0]->lineCount();
@@ -865,7 +866,7 @@ namespace Isis {
               samp += m_patchSampleIncrement, p_progress->CheckStatus()) {
           transformPatch((double)samp, (double)(samp + m_patchSamples - 1),
                          (double)line, (double)(line + m_patchLines - 1),
-                         obrick, iportal, trans, interp);
+                         iportal, trans, interp);
         }
       }
     }
@@ -875,8 +876,7 @@ namespace Isis {
   // Private method to process a small patch of the input cube
   void ProcessRubberSheet::transformPatch(double ssamp, double esamp,
                                            double sline, double eline,
-                                           Brick &obrick, Portal &iportal,
-                                           Transform &trans,
+                                           Portal &iportal, Transform &trans,
                                            Interpolator &interp) {
     // Let's make sure our patch is contained in the input file
     // TODO:  Think about the image edges should I be adding 0.5
@@ -894,40 +894,59 @@ namespace Isis {
     QVector<double> ilines;
     QVector<double> osamps;
     QVector<double> olines;
-
+    
+    // Thread the Xform processing for the four corners
+    double tline1, tsamp1, tline2, tsamp2, tline3, tsamp3, tline4, tsamp4;
+    // erract_c("SET", 7, "IGNORE");
+    trcoff_c();
+    QFuture<bool> future1 = QtConcurrent::run(&trans, &Transform::Xform, std::ref(tsamp1),std::ref(tline1),ssamp,sline,1);
+    QFuture<bool> future2 = QtConcurrent::run(&trans, &Transform::Xform, std::ref(tsamp2),std::ref(tline2),esamp,sline,2);
+    QFuture<bool> future3 = QtConcurrent::run(&trans, &Transform::Xform, std::ref(tsamp3),std::ref(tline3),ssamp,eline,3);
+    QFuture<bool> future4 = QtConcurrent::run(&trans, &Transform::Xform, std::ref(tsamp4),std::ref(tline4),esamp,eline,4);
+    
     // Upper left control point
-    double tline, tsamp;
-    if (trans.Xform(tsamp,tline,ssamp,sline)) {
+    // if(trans.Xform(tsamp1,tline1,ssamp,sline,0)) {
+    if (future1.result()) {
       isamps.push_back(ssamp);
       ilines.push_back(sline);
-      osamps.push_back(tsamp);
-      olines.push_back(tline);
+      osamps.push_back(tsamp1);
+      olines.push_back(tline1); 
     }
-
+    
     // Upper right control point
-    if (trans.Xform(tsamp,tline,esamp,sline)) {
+    // QFuture<bool> future2 = QtConcurrent::run(&trans, &Transform::Xform, tsamp2,tline2,ssamp,sline,2);
+
+    // if(trans.Xform(tsamp2,tline2,ssamp,sline,0)) {
+    if (future2.result()) {
       isamps.push_back(esamp);
       ilines.push_back(sline);
-      osamps.push_back(tsamp);
-      olines.push_back(tline);
+      osamps.push_back(tsamp2);
+      olines.push_back(tline2);
     }
-
+    
     // Lower left control point
-    if (trans.Xform(tsamp,tline,ssamp,eline)) {
+    // QFuture<bool> future3 = QtConcurrent::run(&trans, &Transform::Xform, tsamp3,tline3,ssamp,sline,3);
+
+    if (future3.result()) {
+    // if(trans.Xform(tsamp3,tline3,ssamp,sline,0)) {
       isamps.push_back(ssamp);
       ilines.push_back(eline);
-      osamps.push_back(tsamp);
-      olines.push_back(tline);
+      osamps.push_back(tsamp3);
+      olines.push_back(tline3);
     }
-
+    
     // Lower right control point
-    if (trans.Xform(tsamp,tline,esamp,eline)) {
+    // QFuture<bool> future4 = QtConcurrent::run(&trans, &Transform::Xform, tsamp4,tline4,ssamp,sline,4);
+
+    if (future4.result()) {
+    // if(trans.Xform(tsamp4,tline4,ssamp,sline,0)) {
       isamps.push_back(esamp);
       ilines.push_back(eline);
-      osamps.push_back(tsamp);
-      olines.push_back(tline);
+      osamps.push_back(tsamp4);
+      olines.push_back(tline4);
     }
 
+    
     // If no points we are lost in space.  It's possible a very small
     // target could be completely contained in the patch.  Unlikely and if
     // so why would we be projecting it??
@@ -935,7 +954,7 @@ namespace Isis {
 
     // All four corners must be good.  If not break it down more
     if (isamps.size() < 4) {
-      splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+      splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
       return;
     }
 
@@ -978,11 +997,11 @@ namespace Isis {
      */
 
     if (osampMax - osampMin + 1.0 > OutputCubes[0]->sampleCount() * 0.50) {
-      splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+      splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
       return;
     }
     if (olineMax - olineMin + 1.0 > OutputCubes[0]->lineCount() * 0.50) {
-      splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+      splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
       return;
     }
 
@@ -1008,18 +1027,18 @@ namespace Isis {
       ilineLSQ.Solve(LeastSquares::QRD);
     }
     catch (IException &e) {
-      splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+      splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
       return;
     }
 
     // If the fit at any corner isn't good enough break it down
     for (int i=0; i<isamps.size(); i++) {
       if (fabs(isampLSQ.Residual(i)) > 0.5) {
-        splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+        splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
         return;
       }
       if (fabs(ilineLSQ.Residual(i)) > 0.5) {
-        splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+        splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
         return;
       }
     }
@@ -1042,12 +1061,12 @@ namespace Isis {
       double err = (csamp - isamp) * (csamp - isamp) +
                    (cline - iline) * (cline - iline);
       if (err > 0.25) {
-        splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+        splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
         return;
       }
     }
     else {
-      splitPatch(ssamp, esamp, sline, eline, obrick, iportal, trans, interp);
+      splitPatch(ssamp, esamp, sline, eline, iportal, trans, interp);
       return;
     }
 #endif
@@ -1060,8 +1079,13 @@ namespace Isis {
     double E = ilineFunc.Coefficient(1);
     double F = ilineFunc.Coefficient(2);
 
-    // Now we can do our typical backwards geom.  Loop over the output cube
-    // coordinates and compute input cube coordinates writing pixels 1-by-1
+    // Now we can do our typical backwards geom. Loop over the output cube
+    // coordinates and compute input cube coordinates, writing pixels to buffer
+    // 1-by-1
+    Brick oBrick(*OutputCubes[0], osampMax-osampMin+1, olineMax-olineMin+1, 1);
+    oBrick.SetBasePosition(osampMin, olineMin, iportal.Band());
+    int brickIndex = 0;
+
     for (int oline = olineMin; oline <= olineMax; oline++) {
       double isamp = A * osampMin + B * oline + C;
       double iline = D * osampMin + E * oline + F;
@@ -1075,14 +1099,15 @@ namespace Isis {
         InputCubes[0]->read(iportal);
         double dn = interp.Interpolate(isamp, iline, iportal.DoubleBuffer());
 
-        // Write the output value at the appropriate location
-        if (dn != Null) {
-          obrick.SetBasePosition(osamp,oline,iportal.Band());
-          obrick[0] = dn;
-          OutputCubes[0]->write(obrick);
-        }
+        // Write the output value at the appropriate location in buffer
+        oBrick[brickIndex] = dn;
+        brickIndex++;
       }
     }
+
+    //Write filled buffer to cube
+    OutputCubes[0]->write(oBrick);
+
   }
 
 
@@ -1090,8 +1115,8 @@ namespace Isis {
   // process
   void ProcessRubberSheet::splitPatch(double ssamp, double esamp,
                                        double sline, double eline,
-                                       Brick &obrick, Portal &iportal,
-                                       Transform &trans, Interpolator &interp) {
+                                       Portal &iportal, Transform &trans,
+                                       Interpolator &interp) {
 
     // Is the input patch too small to even worry about transforming?
     if ((esamp - ssamp < 0.1) && (eline - sline < 0.1)) return;
@@ -1102,16 +1127,16 @@ namespace Isis {
 
     transformPatch(ssamp, midSamp,
                    sline, midLine,
-                   obrick, iportal, trans, interp);
+                   iportal, trans, interp);
     transformPatch(midSamp, esamp,
                    sline, midLine,
-                   obrick, iportal, trans, interp);
+                   iportal, trans, interp);
     transformPatch(ssamp, midSamp,
                    midLine, eline,
-                   obrick, iportal, trans, interp);
+                   iportal, trans, interp);
     transformPatch(midSamp, esamp,
                    midLine, eline,
-                   obrick, iportal, trans, interp);
+                   iportal, trans, interp);
 
     return;
   }

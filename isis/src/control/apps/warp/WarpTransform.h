@@ -19,7 +19,7 @@ namespace Isis {
 
       // Implementations for parent's pure virtual members
       bool Xform(double &inSample, double &inLine,
-                 const double outSample, const double outLine);
+                 const double outSample, const double outLine, int index);
       int OutputSamples() const {
         return p_outputSamples;
       };
@@ -41,5 +41,3 @@ namespace Isis {
 
 }
 #endif
-
-

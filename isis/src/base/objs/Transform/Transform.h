@@ -135,9 +135,9 @@ namespace Isis {
        */
       virtual bool Xform(double &inSample, double &inLine,
                          const double outSample,
-                         const double outLine) = 0;
+                         const double outLine,
+                         int index) = 0;
   };
 };
 
 #endif
-

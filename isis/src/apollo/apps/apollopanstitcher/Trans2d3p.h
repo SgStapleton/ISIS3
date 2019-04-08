@@ -54,7 +54,8 @@ public:
 
   ~Trans2d3p() {}
 
-  bool Xform(double &inSample, double &inLine, const double outSample, const double outLine) {
+  bool Xform(double &inSample, double &inLine, const double outSample,
+             const double outLine, int index) {
     inSample  = outSample*m_ct - outLine*m_st + m_sampOffset;
     inLine    = outSample*m_st + outLine*m_ct + m_lineOffset;
 

@@ -88,7 +88,7 @@ map2cam::map2cam(const int inputSamples, const int inputLines,
 
 // Transform method mapping output line/samps to lat/lons to input line/samps
 bool map2cam::Xform(double &inSample, double &inLine,
-                    const double outSample, const double outLine) {
+                    const double outSample, const double outLine, int index) {
   // See if the output image coordinate converts to lat/lon
   if(!p_outcam->SetImage(outSample, outLine)) return false;
 

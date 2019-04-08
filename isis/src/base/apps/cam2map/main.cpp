@@ -79,7 +79,8 @@ void IsisMain() {
   
   // Use the updated label to create the output projection
   int samples, lines;
-  TProjection *outmap = NULL;
+  // TProjection *outmap = NULL;
+  QList<TProjection*> outmaps;
   bool trim = ui.GetBoolean("TRIM");
 
   // Make sure the target name of the input cube and map file match.
@@ -228,11 +229,29 @@ void IsisMain() {
 
     // Determine the image size
     if (ui.GetString("DEFAULTRANGE") == "MINIMIZE") {
-      outmap = (TProjection *) ProjectionFactory::CreateForCube(userMap, samples, lines, *incam);
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, *incam));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, *incam));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, *incam));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, *incam));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, *incam));
       trim = false;
     }
     else {//if (ui.GetString("DEFAULTRANGE") == "CAMERA" || DEFAULTRANGE = MAP) {
-      outmap = (TProjection *) ProjectionFactory::CreateForCube(userMap, samples, lines, false);
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, false));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, false));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, false));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, false));
+      outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+          samples, lines, false));
     }
 //     else {
 //       outmap = (TProjection *) ProjectionFactory::CreateForCube(userMap, samples, lines, false);
@@ -246,15 +265,21 @@ void IsisMain() {
     camGrp.deleteKeyword("MaximumLongitude");
     camGrp.deleteKeyword("PixelResolution");
     // Copy any defaults that are not in the user map from the camera map file
-    outmap = (TProjection *) ProjectionFactory::CreateForCube(userMap,
-                                                              samples,
-                                                              lines,
-                                                              true);//change usrmap to camgrp?
+    outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+        samples, lines, true));
+    outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+        samples, lines, true));
+    outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+        samples, lines, true));
+    outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+        samples, lines, true));
+    outmaps.push_back((TProjection *) ProjectionFactory::CreateForCube(userMap,
+        samples, lines, true));//change usrmap to camgrp?
   }
 
 
   // Output the mapping group used to the Gui session log
-  PvlGroup cleanMapping = outmap->Mapping();
+  PvlGroup cleanMapping = outmaps[0]->Mapping();
   Application::GuiLog(cleanMapping);
 
   // Allocate the output cube and add the mapping labels
@@ -285,9 +310,9 @@ void IsisMain() {
   double centerSamp = icube->sampleCount() / 2.;
   double centerLine = icube->lineCount() / 2.;
   if (incam->SetImage(centerSamp, centerLine)) {
-    if (outmap->SetUniversalGround(incam->UniversalLatitude(),
-                                  incam->UniversalLongitude())) {
-      p.ForceTile(outmap->WorldX(), outmap->WorldY());
+    if (outmaps[0]->SetUniversalGround(incam->UniversalLatitude(),
+                                       incam->UniversalLongitude())) {
+      p.ForceTile(outmaps[0]->WorldX(), outmaps[0]->WorldY());
     }
   }
   // Create an alpha cube group for the output cube
@@ -312,10 +337,10 @@ void IsisMain() {
   if (ui.GetString("WARPALGORITHM") == "FORWARDPATCH") {
     transform = new cam2mapForward(icube->sampleCount(),
                                    icube->lineCount(), 
-                                   incam, 
+                                   icube, 
                                    samples,
                                    lines,
-                                   outmap, 
+                                   outmaps, 
                                    trim);
 
     int patchSize = ui.GetInteger("PATCHSIZE");
@@ -330,7 +355,7 @@ void IsisMain() {
   else if (ui.GetString("WARPALGORITHM") == "REVERSEPATCH") {
     transform = new cam2mapReverse(icube->sampleCount(),
                                    icube->lineCount(), incam, samples,lines,
-                                   outmap, trim);
+                                   outmaps[0], trim);
 
     int patchSize = ui.GetInteger("PATCHSIZE");
     int minPatchSize = 4;
@@ -349,7 +374,7 @@ void IsisMain() {
   else if (incam->GetCameraType() == Camera::Framing) {
     transform = new cam2mapReverse(icube->sampleCount(),
                                    icube->lineCount(), incam, samples,lines,
-                                   outmap, trim);
+                                   outmaps[0], trim);
     p.SetTiling(4, 4);
     p.StartProcess(*transform, *interp);
   }
@@ -363,8 +388,8 @@ void IsisMain() {
   // or 2) if the DTM is much coarser than the image
   else if (incam->GetCameraType() == Camera::LineScan) {
     transform = new cam2mapForward(icube->sampleCount(),
-                                   icube->lineCount(), incam, samples,lines,
-                                   outmap, trim);
+                                   icube->lineCount(), icube, samples,lines,
+                                   outmaps, trim);
 
     p.processPatchTransform(*transform, *interp);
   }
@@ -380,8 +405,8 @@ void IsisMain() {
   // work okay?
   else if (incam->GetCameraType() == Camera::PushFrame) {
     transform = new cam2mapForward(icube->sampleCount(),
-                                   icube->lineCount(), incam, samples,lines,
-                                   outmap, trim);
+                                   icube->lineCount(), icube, samples,lines,
+                                   outmaps, trim);
 
     // Get the frame height
     PushFrameCameraDetectorMap *dmap = (PushFrameCameraDetectorMap *) incam->DetectorMap();
@@ -420,7 +445,7 @@ void IsisMain() {
   else {
     transform = new cam2mapReverse(icube->sampleCount(),
                                    icube->lineCount(), incam, samples,lines,
-                                   outmap, trim);
+                                   outmaps[0], trim);
 
     int tileStart, tileEnd;
     incam->GetGeometricTilingHint(tileStart, tileEnd);
@@ -436,49 +461,60 @@ void IsisMain() {
   Application::Log(cleanMapping);
 
   // Cleanup
-  delete outmap;
+  delete outmaps[0];
+  delete outmaps[1];
+  delete outmaps[2];
+  delete outmaps[3];
+  delete outmaps[4];
   delete transform;
   delete interp;
 }
 
 // Transform object constructor
 cam2mapForward::cam2mapForward(const int inputSamples, const int inputLines,
-                               Camera *incam, const int outputSamples,
-                               const int outputLines, TProjection *outmap,
+                               Cube *icube, const int outputSamples,
+                               const int outputLines, QList<TProjection*> outmaps,
                                bool trim) {
   p_inputSamples = inputSamples;
   p_inputLines = inputLines;
-  p_incam = incam;
+  p_incams.push_back(icube->camera());
+  p_incams.push_back(icube->camera());
+  p_incams.push_back(icube->camera());
+  p_incams.push_back(icube->camera());
+  p_incams.push_back(icube->camera());
 
   p_outputSamples = outputSamples;
   p_outputLines = outputLines;
-  p_outmap = outmap;
+  p_outmaps = outmaps;
 
   p_trim = trim;
 }
 
 // Transform method mapping input line/samps to lat/lons to output line/samps
 bool cam2mapForward::Xform(double &outSample, double &outLine,
-                           const double inSample, const double inLine) {
+                           const double inSample, const double inLine,
+                           int threadIndex) {
   // See if the input image coordinate converts to a lat/lon
-  if (!p_incam->SetImage(inSample,inLine)) return false;
+  if (!p_incams[threadIndex]->SetImage(inSample,inLine)) return false;
 
   // Does that ground coordinate work in the map projection
-  double lat = p_incam->UniversalLatitude();
-  double lon = p_incam->UniversalLongitude();
-  if (!p_outmap->SetUniversalGround(lat,lon)) return false;
+  double lat = p_incams[threadIndex]->UniversalLatitude();
+  double lon = p_incams[threadIndex]->UniversalLongitude();
+  if (!p_outmaps[threadIndex]->SetUniversalGround(lat,lon)) return false;
 
   // See if we should trim
-  if ((p_trim) && (p_outmap->HasGroundRange())) {
-    if (p_outmap->Latitude() < p_outmap->MinimumLatitude()) return false;
-    if (p_outmap->Latitude() > p_outmap->MaximumLatitude()) return false;
-    if (p_outmap->Longitude() < p_outmap->MinimumLongitude()) return false;
-    if (p_outmap->Longitude() > p_outmap->MaximumLongitude()) return false;
+  if ((p_trim) && (p_outmaps[threadIndex]->HasGroundRange())) {
+    if (p_outmaps[threadIndex]->Latitude() < p_outmaps[threadIndex]->MinimumLatitude()) return false;
+    if (p_outmaps[threadIndex]->Latitude() > p_outmaps[threadIndex]->MaximumLatitude()) return false;
+    if (p_outmaps[threadIndex]->Longitude() < p_outmaps[threadIndex]->MinimumLongitude()) return false;
+    if (p_outmaps[threadIndex]->Longitude() > p_outmaps[threadIndex]->MaximumLongitude()) return false;
   }
 
   // Get the output sample/line coordinate
-  outSample = p_outmap->WorldX();
-  outLine = p_outmap->WorldY();
+  // outSample = 1;
+  // outLine = 1;
+  outSample = p_outmaps[threadIndex]->WorldX();
+  outLine = p_outmaps[threadIndex]->WorldY();
 
   // Make sure the point is inside the output image
   if (outSample < 0.5) return false;
@@ -506,8 +542,12 @@ cam2mapReverse::cam2mapReverse(const int inputSamples, const int inputLines,
                                bool trim) {
   p_inputSamples = inputSamples;
   p_inputLines = inputLines;
-  p_incam = incam;
-
+  p_incams[0] = incam;
+  p_incams[1] = new Camera(incam);
+  p_incams[2] = new Camera(incam);
+  p_incams[3] = new Camera(incam);
+  p_incams[4] = new Camera(incam);
+  
   p_outputSamples = outputSamples;
   p_outputLines = outputLines;
   p_outmap = outmap;
@@ -517,7 +557,8 @@ cam2mapReverse::cam2mapReverse(const int inputSamples, const int inputLines,
 
 // Transform method mapping output line/samps to lat/lons to input line/samps
 bool cam2mapReverse::Xform(double &inSample, double &inLine,
-                           const double outSample, const double outLine) {
+                           const double outSample, const double outLine,
+                           int cameraIndex) {
   // See if the output image coordinate converts to lat/lon
   if (!p_outmap->SetWorld(outSample, outLine)) return false;
 
@@ -533,17 +574,17 @@ bool cam2mapReverse::Xform(double &inSample, double &inLine,
   double lat = p_outmap->UniversalLatitude();
   double lon = p_outmap->UniversalLongitude();
 
-  if (!p_incam->SetUniversalGround(lat, lon)) return false;
+  if (!p_incams[cameraIndex]->SetUniversalGround(lat, lon)) return false;
 
   // Make sure the point is inside the input image
-  if (p_incam->Sample() < 0.5) return false;
-  if (p_incam->Line() < 0.5) return false;
-  if (p_incam->Sample() > p_inputSamples + 0.5) return false;
-  if (p_incam->Line() > p_inputLines + 0.5) return false;
+  if (p_incams[cameraIndex]->Sample() < 0.5) return false;
+  if (p_incams[cameraIndex]->Line() < 0.5) return false;
+  if (p_incams[cameraIndex]->Sample() > p_inputSamples + 0.5) return false;
+  if (p_incams[cameraIndex]->Line() > p_inputLines + 0.5) return false;
 
   // Everything is good
-  inSample = p_incam->Sample();
-  inLine = p_incam->Line();
+  inSample = p_incams[cameraIndex]->Sample();
+  inLine = p_incams[cameraIndex]->Line();
 
   return true;
 }
@@ -696,4 +737,3 @@ void loadCameraRange() {
   ui.Clear("DEFAULTRANGE");
   ui.PutAsString("DEFAULTRANGE", "CAMERA");
 }
-

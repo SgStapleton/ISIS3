@@ -33,7 +33,7 @@ class UnitTestTrans : public Transform {
     }
     bool Xform(double &inSample, double &inLine,
                const double outSample,
-               const double outLine) {
+               const double outLine, int index) {
       inSample = outSample;
       if(outSample > 64) {
         inSample = 127 - (outSample - 64);
@@ -109,5 +109,3 @@ void IsisMain() {
 void myBandChange(const int band) {
   cout << "The band changed to :" << band << endl;
 }
-
-
